@@ -45,6 +45,17 @@ class Migration:
         ))
         db.send_create_signal('newsletter', ['Link'])
 
+        # Adding model 'Sender'
+        db.create_table('newsletter_sender', (
+            ('from_name', orm['newsletter.Sender:from_name']),
+            ('from_email', orm['newsletter.Sender:from_email']),
+            ('reply_name', orm['newsletter.Sender:reply_name']),
+            ('reply_email', orm['newsletter.Sender:reply_email']),
+            ('creation_date', orm['newsletter.Sender:creation_date']),
+            ('modification_date', orm['newsletter.Sender:modification_date']),
+        ))
+        db.send_create_signal('newsletter', ['Sender'])
+
         # Adding model 'Newsletter'
         db.create_table('newsletter_newsletter', (
             ('id', orm['newsletter.Newsletter:id']),
@@ -52,8 +63,9 @@ class Migration:
             ('content', orm['newsletter.Newsletter:content']),
             ('mailing_list', orm['newsletter.Newsletter:mailing_list']),
             ('server', orm['newsletter.Newsletter:server']),
-            ('header_sender', orm['newsletter.Newsletter:header_sender']),
-            ('header_reply', orm['newsletter.Newsletter:header_reply']),
+            ('sender', orm['newsletter.Newsletter:sender']),
+            #('header_sender', orm['newsletter.Newsletter:header_sender']),
+            #('header_reply', orm['newsletter.Newsletter:header_reply']),
             ('status', orm['newsletter.Newsletter:status']),
             ('sending_date', orm['newsletter.Newsletter:sending_date']),
             ('slug', orm['newsletter.Newsletter:slug']),
@@ -85,7 +97,7 @@ class Migration:
             ('subscriber', orm['newsletter.Contact:subscriber']),
             ('valid', orm['newsletter.Contact:valid']),
             ('tester', orm['newsletter.Contact:tester']),
-            ('tags', orm['newsletter.Contact:tags']),
+            #('tags', orm['newsletter.Contact:tags']),
             ('content_type', orm['newsletter.Contact:content_type']),
             ('object_id', orm['newsletter.Contact:object_id']),
             ('creation_date', orm['newsletter.Contact:creation_date']),
@@ -148,6 +160,9 @@ class Migration:
 
         # Deleting model 'Link'
         db.delete_table('newsletter_link')
+
+        # Deleting model 'Sender'
+        db.delete_table('newsletter_sender')
 
         # Deleting model 'Newsletter'
         db.delete_table('newsletter_newsletter')
@@ -236,13 +251,14 @@ class Migration:
         'newsletter.newsletter': {
             'content': ('django.db.models.fields.TextField', [], {'default': "u'<body>\\n<!-- Edit your newsletter here -->\\n</body>'"}),
             'creation_date': ('django.db.models.fields.DateTimeField', [], {'auto_now_add': 'True', 'blank': 'True'}),
-            'header_reply': ('django.db.models.fields.CharField', [], {'default': "'Emencia Newsletter<noreply@emencia.com>'", 'max_length': '255'}),
-            'header_sender': ('django.db.models.fields.CharField', [], {'default': "'Emencia Newsletter<noreply@emencia.com>'", 'max_length': '255'}),
+            #'header_reply': ('django.db.models.fields.CharField', [], {'default': "'Emencia Newsletter<noreply@emencia.com>'", 'max_length': '255'}),
+            #'header_sender': ('django.db.models.fields.CharField', [], {'default': "'Emencia Newsletter<noreply@emencia.com>'", 'max_length': '255'}),
             'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
             'mailing_list': ('django.db.models.fields.related.ForeignKey', [], {'to': "orm['newsletter.MailingList']"}),
             'modification_date': ('django.db.models.fields.DateTimeField', [], {'auto_now': 'True', 'blank': 'True'}),
             'sending_date': ('django.db.models.fields.DateTimeField', [], {'default': 'datetime.datetime.now'}),
             'server': ('django.db.models.fields.related.ForeignKey', [], {'default': '1', 'to': "orm['newsletter.SMTPServer']"}),
+            'sender': ('django.db.models.fields.related.ForeignKey', [], {'default': '1', 'to': "orm['newsletter.Sender']"}),
             'slug': ('django.db.models.fields.SlugField', [], {'max_length': '50', 'db_index': 'True'}),
             'status': ('django.db.models.fields.IntegerField', [], {'default': '0'}),
             'test_contacts': ('django.db.models.fields.related.ManyToManyField', [], {'to': "orm['newsletter.Contact']", 'null': 'True', 'blank': 'True'}),

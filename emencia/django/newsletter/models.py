@@ -1,8 +1,10 @@
+# -*- coding: utf-8 -*-
 """Models for emencia.django.newsletter"""
 from smtplib import SMTP
 from smtplib import SMTPHeloError
 from datetime import datetime
 from datetime import timedelta
+from email.header import Header
 
 from django.db import models
 from django.utils.encoding import smart_str
@@ -16,8 +18,10 @@ from django.utils.encoding import force_unicode
 from tagging.fields import TagField
 from emencia.django.newsletter.managers import ContactManager
 from emencia.django.newsletter.settings import MAILER_HARD_LIMIT
-from emencia.django.newsletter.settings import DEFAULT_HEADER_REPLY
-from emencia.django.newsletter.settings import DEFAULT_HEADER_SENDER
+from emencia.django.newsletter.settings import DEFAULT_HEADER_REPLY_NAME
+from emencia.django.newsletter.settings import DEFAULT_HEADER_REPLY_EMAIL
+from emencia.django.newsletter.settings import DEFAULT_HEADER_FROM_NAME 
+from emencia.django.newsletter.settings import DEFAULT_HEADER_FROM_EMAIL
 from emencia.django.newsletter.settings import NEWSLETTER_BASE_PATH
 from emencia.django.newsletter.utils.vcard import vcard_contact_export
 
@@ -96,14 +100,16 @@ class SMTPServer(models.Model):
 
 class Contact(models.Model):
     """Contact for emailing"""
-    email = models.EmailField(_('email'), unique=True)
-    first_name = models.CharField(_('first name'), max_length=50, blank=True)
-    last_name = models.CharField(_('last name'), max_length=50, blank=True)
+    email = models.EmailField(_('email'), unique=False)
+    first_name = models.CharField(_('first name'), max_length=128, blank=True)
+    last_name = models.CharField(_('last name'), max_length=128, blank=True)
 
     subscriber = models.BooleanField(_('subscriber'), default=True)
     valid = models.BooleanField(_('valid email'), default=True)
     tester = models.BooleanField(_('contact tester'), default=False)
-    tags = TagField(_('tags'))
+    # THIS SEEMS PAINFULLY SLOW WITH LOTS OF INSERT
+    # tags = TagField(_('tags'))
+    extra = models.CharField(_('extra fields'), max_length=512, blank=True)
 
     content_type = models.ForeignKey(ContentType, blank=True, null=True)
     object_id = models.PositiveIntegerField(blank=True, null=True)
@@ -141,8 +147,8 @@ class Contact(models.Model):
             contact_name = '%s %s' % (self.last_name, self.first_name)
         else:
             contact_name = self.email
-        if self.tags:
-            return '%s | %s' % (contact_name, self.tags)
+        #if self.tags:
+            #return '%s | %s' % (contact_name, self.tags)
         return contact_name
 
     class Meta:
@@ -187,6 +193,34 @@ class MailingList(models.Model):
         verbose_name_plural = _('mailing lists')
 
 
+class Sender(models.Model):
+    """From & Reply-to names and adresses"""
+
+    from_name = models.CharField(_('from name'), max_length=255,
+                                     default=DEFAULT_HEADER_FROM_NAME)
+    from_email = models.CharField(_('from email'), max_length=255,
+                                     default=DEFAULT_HEADER_FROM_EMAIL)
+    reply_name = models.CharField(_('reply to name'), max_length=255,
+                                    default=DEFAULT_HEADER_REPLY_NAME)
+    reply_email = models.CharField(_('reply to email'), max_length=255,
+                                    default=DEFAULT_HEADER_REPLY_EMAIL)
+    creation_date = models.DateTimeField(_('creation date'), auto_now_add=True)
+    modification_date = models.DateTimeField(_('modification date'), auto_now=True)
+
+    def header_sender(self):
+        return '%s <%s>' % (Header(self.from_name.strip(), 'utf-8'), self.from_email.strip('<>') )
+
+    def header_reply(self):
+        return '%s <%s>' % (Header(self.reply_name.strip(), 'utf-8'), self.reply_email.strip('<>') )
+
+    def __unicode__(self):
+        return self.header_sender() 
+
+    class Meta:
+        ordering = ('from_name',)
+        verbose_name = _(u'Expéditeur')
+        verbose_name_plural = _(u'Expéditeurs')
+
 class Newsletter(models.Model):
     """Newsletter to be sended to contacts"""
     DRAFT = 0
@@ -214,10 +248,12 @@ class Newsletter(models.Model):
 
     server = models.ForeignKey(SMTPServer, verbose_name=_('smtp server'),
                                default=1)
-    header_sender = models.CharField(_('sender'), max_length=255,
-                                     default=DEFAULT_HEADER_SENDER)
-    header_reply = models.CharField(_('reply to'), max_length=255,
-                                    default=DEFAULT_HEADER_REPLY)
+    sender = models.ForeignKey(Sender, verbose_name=_('sender'),
+                               default=1)
+    #header_sender = models.CharField(_('sender'), max_length=255,
+                                     #default=DEFAULT_HEADER_SENDER)
+    #header_reply = models.CharField(_('reply to'), max_length=255,
+                                    #default=DEFAULT_HEADER_REPLY)
 
     status = models.IntegerField(_('status'), choices=STATUS_CHOICES, default=DRAFT)
     sending_date = models.DateTimeField(_('sending date'), default=datetime.now)

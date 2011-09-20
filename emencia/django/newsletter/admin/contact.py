@@ -1,8 +1,10 @@
 """ModelAdmin for Contact"""
+import os.path, zipfile
 from datetime import datetime
 
 from django.contrib import admin
 from django.dispatch import Signal
+from django.conf import settings
 from django.conf.urls.defaults import url
 from django.conf.urls.defaults import patterns
 from django.core.urlresolvers import reverse
@@ -26,12 +28,12 @@ contacts_imported = Signal(providing_args=['source', 'type'])
 
 class ContactAdmin(admin.ModelAdmin):
     date_hierarchy = 'creation_date'
-    list_display = ('email', 'first_name', 'last_name', 'tags', 'tester', 'subscriber',
+    list_display = ('email', 'first_name', 'last_name', 'extra', 'tester', 'subscriber',
                     'valid', 'total_subscriptions', 'creation_date', 'related_object_admin')
     list_filter = ('subscriber', 'valid', 'tester', 'creation_date', 'modification_date')
-    search_fields = ('email', 'first_name', 'last_name', 'tags')
+    search_fields = ('email', 'first_name', 'last_name', 'extra')
     fieldsets = ((None, {'fields': ('email', 'first_name', 'last_name')}),
-                 (None, {'fields': ('tags',)}),
+                 (None, {'fields': ('extra',)}),
                  (_('Status'), {'fields': ('subscriber', 'valid', 'tester')}),
                  (_('Advanced'), {'fields': ('object_id', 'content_type'),
                                   'classes': ('collapse',)}),
@@ -110,12 +112,37 @@ class ContactAdmin(admin.ModelAdmin):
         opts = self.model._meta
 
         if request.FILES:
+            inserted = 0
             source = request.FILES.get('source')
+
             if not request.user.is_superuser and USE_WORKGROUPS:
                 workgroups = request_workgroups(request)
             else:
                 workgroups = []
-            inserted = import_dispatcher(source, request.POST['type'],
+
+            # look for zip extension and content-type 
+            # then extract if it is actually a zip
+            extension = os.path.splitext(source.name)[1]
+            if extension == ".zip" and ( source.content_type == "application/x-zip" or source.content_type == "application/zip"):
+                # unzip its content to tmp file before importing
+                # Unzip the file, creating subdirectories as needed
+                zfobj = zipfile.ZipFile(source)
+                for name in zfobj.namelist():
+                    extension = os.path.splitext(name)[1] 
+                    if extension == '.csv':
+                        fullpathName = os.path.join(settings.BULK_INSERT_DIR, name)
+                        outfile = open(fullpathName, 'wb')
+                        outfile.write(zfobj.read(name))
+                        outfile.close()
+                        inserted += import_dispatcher(open(fullpathName, 'rb'), request.POST['type'],
+                                         request.POST['mailing'],
+                                         workgroups)
+                       
+                        outfile.close()
+                        os.remove(fullpathName);
+            else:
+                inserted = import_dispatcher(source, request.POST['type'],
+                                         request.POST['mailing'],
                                          workgroups)
             if inserted:
                 contacts_imported.send(sender=self, source=source,

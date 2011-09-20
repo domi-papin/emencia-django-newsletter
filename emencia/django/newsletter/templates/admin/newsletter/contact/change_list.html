@@ -3,33 +3,35 @@
 
 {% block extrahead %}
 {{ block.super }}
-<script type="text/javascript" src="{{ NEWSLETTER_MEDIA_URL }}js/jquery.js"></script>
+<!--<script type="text/javascript" src="{{ NEWSLETTER_MEDIA_URL }}js/jquery.js"></script>-->
 <script type="text/javascript">
-$(document).ready(function() {
-  $('#custom-tools').hide();
+(function($) {
+    $(document).ready(function() {
+      $('#custom-tools').hide();
 
-  function toggle_main_actions() {
-    $('#main-tools').slideToggle('medium');
-  };
+      function toggle_main_actions() {
+        $('#main-tools').slideToggle('medium');
+      };
 
-  $('#deploy-actions').click(function() {
-    $('#custom-tools').slideToggle('medium', function () {
-      toggle_main_actions();
+      $('#deploy-actions').click(function() {
+        $('#custom-tools').slideToggle('medium', function () {
+          toggle_main_actions();
+        });
+      });
+
+      $('#unploy-actions').click(function() {
+        $('#custom-tools').slideToggle('medium', function () {
+          toggle_main_actions();
+        });
+      });
+
     });
-  });
-
-  $('#unploy-actions').click(function() {
-    $('#custom-tools').slideToggle('medium', function () {
-      toggle_main_actions();
-    });
-  });
-
-});
+})(django.jQuery);
 </script>
 {% endblock %}
 
 {% block object-tools %}
-<ul class="object-tools" id="main-tools" style="position: bottom;">
+<ul class="object-tools tools" id="main-tools" style="position: bottom;">
   {% if has_add_permission %}
   <li>
     <a href="add/{% if is_popup %}?_popup=1{% endif %}" class="addlink">
@@ -44,7 +46,7 @@ $(document).ready(function() {
   </li>
 </ul>
 
-<ul class="object-tools" id="custom-tools">
+<ul class="object-tools tools" id="custom-tools">
   {% if has_add_permission %}
   <li>
     <a href="import/{% if is_popup %}?_popup=1{% endif %}" class="addlink">

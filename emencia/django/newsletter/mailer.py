@@ -1,5 +1,6 @@
 """Mailer for emencia.django.newsletter"""
 import re
+import shlex
 import mimetypes
 from random import sample
 from StringIO import StringIO
@@ -37,6 +38,7 @@ from emencia.django.newsletter.settings import TRACKING_LINKS
 from emencia.django.newsletter.settings import TRACKING_IMAGE
 from emencia.django.newsletter.settings import UNIQUE_KEY_LENGTH
 from emencia.django.newsletter.settings import UNIQUE_KEY_CHAR_SET
+from emencia.django.newsletter.settings import INCLUDE_LINKSITE
 from emencia.django.newsletter.settings import INCLUDE_UNSUBSCRIPTION
 
 
@@ -85,13 +87,20 @@ class Mailer(object):
         if self.verbose:
             print '%i emails will be sent' % len(self.expedition_list)
 
-        for contact in self.expedition_list:
+        newsletter_id = self.newsletter.id
+        canceled = False 
+        for (counter, contact) in enumerate(self.expedition_list):
+            # every 100 contact, check if the newsletter was canceled and return if so
+            if ( counter % 100 == 0 ) and Newsletter.objects.get(pk=newsletter_id).status == Newsletter.CANCELED:
+                canceled = True
+                break
+
             if self.verbose:
                 print '- Processing %s' % contact.__unicode__()
 
             message = self.build_message(contact)
             try:
-                self.smtp.sendmail(smart_str(self.newsletter.header_sender),
+                self.smtp.sendmail(smart_str(self.newsletter.sender.header_sender()),
                                    contact.email,
                                    message.as_string())
                 status = self.test and ContactMailingStatus.SENT_TEST \
@@ -106,7 +115,10 @@ class Mailer(object):
             ContactMailingStatus.objects.create(newsletter=self.newsletter,
                                                 contact=contact, status=status)
         self.smtp.quit()
-        self.update_newsletter_status()
+        if not canceled:
+            self.update_newsletter_status()
+        else:
+            print 'Newsletter %s canceled at %s contact' % (self.newsletter.__unicode__(), counter) 
 
     def build_message(self, contact):
         """
@@ -120,8 +132,8 @@ class Mailer(object):
         message = MIMEMultipart()
 
         message['Subject'] = self.build_title_content(contact)
-        message['From'] = smart_str(self.newsletter.header_sender)
-        message['Reply-to'] = smart_str(self.newsletter.header_reply)
+        message['From'] = smart_str(self.newsletter.sender.header_sender())
+        message['Reply-to'] = smart_str(self.newsletter.sender.header_reply())
         message['To'] = contact.mail_format()
 
         message_alt = MIMEMultipart('alternative')
@@ -195,6 +207,11 @@ class Mailer(object):
     def build_email_content(self, contact):
         """Generate the mail for a contact"""
         uidb36, token = tokenize(contact)
+        extra = contact.extra.encode('ascii', 'xmlcharrefreplace')
+        for extratoken in shlex.split(extra):
+            if extratoken.find('=') != -1:
+                subtokens = extratoken.split('=')
+                setattr(contact, subtokens[0], subtokens[1])
         context = Context({'contact': contact,
                            'domain': Site.objects.get_current().domain,
                            'newsletter': self.newsletter,
@@ -203,8 +220,9 @@ class Mailer(object):
         content = self.newsletter_template.render(context)
         if TRACKING_LINKS:
             content = track_links(content, context)
-        link_site = render_to_string('newsletter/newsletter_link_site.html', context)
-        content = body_insertion(content, link_site)
+        if INCLUDE_LINKSITE:
+            link_site = render_to_string('newsletter/newsletter_link_site.html', context)
+            content = body_insertion(content, link_site)
 
         if INCLUDE_UNSUBSCRIPTION:
             unsubscription = render_to_string('newsletter/newsletter_link_unsubscribe.html', context)

@@ -13,10 +13,10 @@
 {% endblock %}
 
 {% block extrastyle %}{{ block.super }}<link rel="stylesheet" type="text/css" href="{% admin_media_prefix %}css/forms.css" />{% endblock %}
-
 {% block content %}
 <div id="content-main">
 
+{% comment %}
   <form action="." method="post" enctype="multipart/form-data">
     {% csrf_token %}
     <div>
@@ -39,6 +39,7 @@
       </div>
     </div>
   </form>
+{% endcomment %}
 
   <form action="." method="post" enctype="multipart/form-data">
     {% csrf_token %}
@@ -47,13 +48,19 @@
         <h2>{% trans "Text" %}</h2>
         <div class="form-row source">
           <div>
+            <label for="id_mailing" class="required">Identité du mailing :</label>
+            <input name="mailing" id="id_mailing" type="text" class="vTextField" />
+          </div>
+          <div>
             <label for="id_source" class="required">{% trans "Text file (.txt, .csv)" %} :</label>
             <input name="type" value="text" type="hidden" />
             <input name="source" id="id_source" type="file" class="vTextField" />
           </div>
-          <p class="help">{% trans "Import contacts from a text file, or a CSV file." %}<br />
-            {% trans "Columns are [email][last name][first name][tags], splitted by a dot coma." %}<br />
-            {% trans "All columns are optionnal excepting the email." %}
+          <p class="help">Importez vos contacts depuis un fichier texte ou un fichier CSV.<br />
+            La première ligne du csv doit établir les noms des colonnes (séparé par des points virgule).<br />
+            Une colonne est obligatoire : "email" <br />
+            Les autres colonnes sont optionnelles mais certaines ont leur propre champ associé dans la table contact : "first_name", "last_name"<br />
+            Toute autre colonne est importé dans le champ contact.extra sous la forme "nom_colonne=valeur;"
           </p>
         </div>
       </fieldset>
@@ -63,6 +70,7 @@
     </div>
   </form>
 
+{% comment %}
   <form action="." method="post" enctype="multipart/form-data">
     {% csrf_token %}
     <div>
@@ -82,6 +90,7 @@
       </div>
     </div>
   </form>
+{% endcomment %}
 
 </div>
 {% endblock %}

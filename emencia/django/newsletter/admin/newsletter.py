@@ -35,13 +35,12 @@ class NewsletterAdmin(admin.ModelAdmin):
                     'sending_date', 'creation_date', 'modification_date',
                     'historic_link', 'statistics_link')
     list_filter = ('status', 'sending_date', 'creation_date', 'modification_date')
-    search_fields = ('title', 'content', 'header_sender', 'header_reply')
+    search_fields = ('title', 'content', 'sender')
     filter_horizontal = ['test_contacts']
     fieldsets = ((None, {'fields': ('title', 'content',)}),
                  (_('Receivers'), {'fields': ('mailing_list', 'test_contacts',)}),
                  (_('Sending'), {'fields': ('sending_date', 'status',)}),
-                 (_('Miscellaneous'), {'fields': ('server', 'header_sender',
-                                                  'header_reply', 'slug'),
+                 (_('Miscellaneous'), {'fields': ('server', 'sender', 'slug'),
                                        'classes': ('collapse',)}),
                  )
     prepopulated_fields = {'slug': ('title',)}

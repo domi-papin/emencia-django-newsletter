@@ -6,6 +6,7 @@ from emencia.django.newsletter.models import Link
 from emencia.django.newsletter.models import Contact
 from emencia.django.newsletter.models import WorkGroup
 from emencia.django.newsletter.models import SMTPServer
+from emencia.django.newsletter.models import Sender
 from emencia.django.newsletter.models import Newsletter
 from emencia.django.newsletter.models import MailingList
 from emencia.django.newsletter.models import ContactMailingStatus
@@ -15,10 +16,12 @@ from emencia.django.newsletter.admin.contact import ContactAdmin
 from emencia.django.newsletter.admin.workgroup import WorkGroupAdmin
 from emencia.django.newsletter.admin.newsletter import NewsletterAdmin
 from emencia.django.newsletter.admin.smtpserver import SMTPServerAdmin
+from emencia.django.newsletter.admin.sender import SenderAdmin
 from emencia.django.newsletter.admin.mailinglist import MailingListAdmin
 
 
 admin.site.register(Contact, ContactAdmin)
+admin.site.register(Sender, SenderAdmin)
 admin.site.register(SMTPServer, SMTPServerAdmin)
 admin.site.register(Newsletter, NewsletterAdmin)
 admin.site.register(MailingList, MailingListAdmin)

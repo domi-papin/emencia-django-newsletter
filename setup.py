@@ -28,10 +28,11 @@ setup(name='emencia.django.newsletter',
       namespace_packages=['emencia', 'emencia.django'],
       include_package_data=True,
       zip_safe=False,
-      install_requires=['setuptools',
-                        'html2text',
-                        'BeautifulSoup',
-                        'django-tagging',
-                        'vobject',
-                        'xlwt',
-                        'xlrd'])
+      install_requires=[])
+      #install_requires=['setuptools',
+                        #'html2text',
+                        #'BeautifulSoup',
+                        #'django-tagging',
+                        #'vobject',
+                        #'xlwt',
+                        #'xlrd'])
